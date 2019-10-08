@@ -3,46 +3,52 @@ import json
 from dataclasses import asdict
 
 CONNECTION_COUNTER = 0
-from models import TouristOrganisation
+from models import StudentSession
 
 
 def get(pk=None):
-    tour = TouristOrganisation.get(pk)
-    if not tour:
+    student = StudentSession.get(pk)
+    if not student:
         return dict()
     else:
-        return asdict(tour)
+        return asdict(student)
 
 
 def add(**kwargs):
-    return asdict(TouristOrganisation(**kwargs).save()) # создание и сохранение данных класса
+    return asdict(StudentSession(**kwargs).save()) # создание и сохранение данных класса
 
 
 def delete(pk=None):
-    TouristOrganisation.delete(tour_uuid=pk)
+    StudentSession.delete(student_uuid=pk)
     return {'message': 'success'}
 
 
-def get_all_tours():
-    all_tours = TouristOrganisation.get_all_tours()
-    response = [asdict(tour) for tour in all_tours]
+def get_all_students():
+    all_students = StudentSession.get_all_students()
+    response = [asdict(student) for student in all_students]
     return response
 
 
 def edit(**kwargs):
     print('edit')
-    asdict(TouristOrganisation(**kwargs).save())
+    asdict(StudentSession(**kwargs).save())
     return {'message': 'success'}
 
 
-def filter_lt(cost=None):
-    response = TouristOrganisation.filter_lt(cost=cost)
-    response = [asdict(tour) for tour in response]
+def filter_lt(common_mark=None):
+    response = StudentSession.filter_lt(common_mark=common_mark)
+    response = [asdict(student) for student in response]
     return response
 
 
-operators = {'get': get, 'add': add, 'delete': delete, 'get_all_tours': get_all_tours, 'edit': edit,
-             'filter': filter_lt}
+def filtera(**kwargs):
+    response = StudentSession.filter(**kwargs)
+    response = [asdict(student) for student in response]
+    return response
+
+
+operators = {'get': get, 'add': add, 'delete': delete, 'get_all_students': get_all_students, 'edit': edit,
+             'filter_lt': filter_lt, 'filter': filtera }
 
 
 async def handle_echo(reader, writer):

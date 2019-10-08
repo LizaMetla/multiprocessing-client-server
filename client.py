@@ -16,12 +16,13 @@ class UserInterface:
 
     def __init__(self, loop):
         self.menu_common = {
-            '1': {'desc': 'Просмотр всех туров.', 'func': self.get_all_tours},
-            '2': {'desc': 'Просмотр тура', 'func': self.tour_view},
-            '3': {'desc': 'Добавление тура', 'func': self.add_tour},
-            '4': {'desc': 'Удаление тура', 'func': self.delete_tour},
-            '5': {'desc': 'Редактирование тура', 'func': self.edit_tour},
-            '6': {'desc': 'Фильтрация туров по стоимости', 'func': self.filter_tour},
+            '1': {'desc': 'Просмотр учеников.', 'func': self.get_all_students},
+            '2': {'desc': 'Просмотр ученика', 'func': self.student_view},
+            '3': {'desc': 'Добавление студента', 'func': self.add_student},
+            '4': {'desc': 'Удаление студента', 'func': self.delete_student},
+            '5': {'desc': 'Редактирование студента', 'func': self.edit_student},
+            '6': {'desc': 'Фильтрация студентов по оценке', 'func': self.filter_students_by_mark},
+            '7': {'desc': 'Поиск', 'func': self.filter_students},
             '0': {'desc': 'Выход', 'func': self.exit_from_program}
         }
         self.loop = loop
@@ -77,46 +78,46 @@ class UserInterface:
             else:
                 print('Неверный ввод! \n')
 
-    async def get_all_tours(self):
-        await self.send_data('get_all_tours')
+    async def get_all_students(self):
+        await self.send_data('get_all_students')
         await self.read_data()
 
-    async def tour_view(self):
+    async def student_view(self):
         pk = input('Введите первичный ключ пользователя: ')
         await self.send_data('get', pk=pk)
         await self.read_data()
 
-    async def add_tour(self):
-        name = input('Введите название тура: ')
-        cost = input('Введите стоимость тура: ')
-        timeline = input('Продолжительность тура: ')
-        type_of_transport = input('Введите тип транспорта: ')
-        await self.send_data('add', name=name, cost=cost, timeline=timeline, type_of_transport=type_of_transport)
+    async def add_student(self):
+        name = input('Введите ФАМИЛИЮ студента: ')
+        common_mark = input('Введите среднюю оценку: ')
+        sex = input('Введите пол студента: ')
+        form_of_education = input('Введите тип обучения: ')
+        await self.send_data('add', name=name, common_mark=common_mark, sex=sex, form_of_education=form_of_education)
         await self.read_data()
 
-    async def delete_tour(self):
+    async def delete_student(self):
         pk = input('Введите первичный ключ тура, для удалениия: ')
         await self.send_data('delete', pk=pk)
         await self.read_data()
 
-    async def edit_tour(self):
-        await self.send_data('get_all_tours')
-        all_tours = await self.read_data()
+    async def edit_student(self):
+        await self.send_data('get_all_students')
+        all_students = await self.read_data()
         pk = input('Введите первичный ключ тура, для редактирования: ')
-        while not self._is_tour_exists(pk, all_tours):
+        while not self._is_student_exists(pk, all_students):
             print('Неверный ввод, такой записи не существует!')
             pk = input('Введите первичный ключ тура, для редактирования: ')
-        tour = self._get_tour_from_tours(pk, all_tours)
-        edit_tour = self._edit_tour_from_dict(tour)
-        await self.send_data('edit', **edit_tour)
+        student = self._get_student_from_students(pk, all_students)
+        edit_student = self._edit_student_from_dict(student)
+        await self.send_data('edit', **edit_student)
         await self.read_data()
 
-    def _edit_tour_from_dict(self, tour):
+    def _edit_student_from_dict(self, student):
         continue_flag = 'д'
         while continue_flag == 'д':
             answers = {}
             i = 1
-            for key, value in tour.items():
+            for key, value in student.items():
                 if key == 'pk':
                     continue
                 print(f'{i}: {key} - {value}')
@@ -125,24 +126,44 @@ class UserInterface:
             number = int(input('Введите номер поля, которое вы хотите редактировать: '))
             key = answers.get(number)
             new_value = input(f'Введите новое значение для поля {key}: ')
-            tour.update({key: new_value})
+            student.update({key: new_value})
             continue_flag = input('Продолжить редактирование? Д/н').lower()
-        return tour
+        return student
 
-    def _is_tour_exists(self, pk, all_tours):
-        for tour in all_tours:
-            if tour.get('pk') == pk:
+    def _is_student_exists(self, pk, all_students):
+        for student in all_students:
+            if student.get('pk') == pk:
                 return True
         return False
 
-    def _get_tour_from_tours(self, pk, all_tours):
-        for tour in all_tours:
-            if tour.get('pk') == pk:
-                return tour
+    def _get_student_from_students(self, pk, all_students):
+        for student in all_students:
+            if student.get('pk') == pk:
+                return student
 
-    async def filter_tour(self):
-        cost = float(input('Введите стоимость тура: '))
-        await self.send_data('filter', cost=cost)
+    async def filter_students_by_mark(self):
+        common_mark = float(input('Введите максимальную оценку: '))
+        await self.send_data('filter_lt', common_mark=common_mark)
+        await self.read_data()
+
+    async def filter_students(self):
+        model_fields = ['name', 'common_mark', 'sex', 'form_of_education']
+        filter_params = {}
+        continue_flag = 'д'
+        while continue_flag == 'д':
+            answers = {}
+            i = 1
+            for key in model_fields:
+                print(f'{i}: {key}')
+                answers.update({i: key})
+                i += 1
+            number = int(input('Введите номер поля для поиска: '))
+            key = answers.get(number)
+            new_value = input(f'Введите значение для поиска {key}: ')
+            filter_params.update({key: new_value})
+            continue_flag = input('Продолжить ? Д/н').lower()
+
+        await self.send_data('filter', **filter_params)
         await self.read_data()
 
     async def exit_from_program(self):

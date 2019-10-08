@@ -4,69 +4,69 @@ from uuid import uuid4
 
 
 @dataclass
-class TouristOrganisation:
+class StudentSession:
     name: str
-    cost: float
-    timeline: str
-    type_of_transport: str
+    common_mark: float
+    sex: str
+    form_of_education: str
     pk: str = uuid4().hex
 
     def save(self):
-        all_tours = self.get_all_tours()
-        new_tours = []
-        for tour in all_tours:
-            if tour.pk != self.pk:
-                new_tours.append(tour)
-        new_tours.append(self)
-        self._save_in_db(new_tours)
+        all_students = self.get_all_students()
+        new_students = []
+        for student in all_students:
+            if student.pk != self.pk:
+                new_students.append(student)
+        new_students.append(self)
+        self._save_in_db(new_students)
         return self
 
     @classmethod
     def filter(cls, queryset=None, **kwargs):
         if queryset is None:
-            queryset = cls.get_all_tours()
+            queryset = cls.get_all_students()
         result = queryset
         for key, value in kwargs.items():
-            result = list(filter(lambda tour: getattr(tour, key) == value, result))
+            result = list(filter(lambda student: getattr(student, key) == value, result))
         return result
 
     @classmethod
     def filter_lt(cls, queryset=None, **kwargs):
         if queryset is None:
-            queryset = cls.get_all_tours()
+            queryset = cls.get_all_students()
         result = queryset
         for key, value in kwargs.items():
-            result = list(filter(lambda tour: float(getattr(tour, key)) < value, result))
+            result = list(filter(lambda student: float(getattr(student, key)) < value, result))
         return result
 
     @classmethod
-    def get(cls, tour_pk):
-        all_tours = cls.get_all_tours()
-        search_list = list(filter(lambda tour: tour.pk == tour_pk, all_tours))
+    def get(cls, student_pk):
+        all_students = cls.get_all_students()
+        search_list = list(filter(lambda student: student.pk == student_pk, all_students))
         if len(search_list) < 1:
             return dict()
         return search_list.pop(0)
 
 
     @classmethod
-    def delete(cls, tour_uuid):
-        tour = cls.get(tour_uuid)
-        all_tours = cls.get_all_tours()
-        if tour in all_tours:
-            all_tours.remove(tour)
-        cls._save_in_db(all_tours)
+    def delete(cls, student_uuid):
+        student = cls.get(student_uuid)
+        all_students = cls.get_all_students()
+        if student in all_students:
+            all_students.remove(student)
+        cls._save_in_db(all_students)
 
     @classmethod
-    def is_tour_by_uuid_exists(cls, tour_uuid):
-        all_tours = cls.get_all_tours()
-        search_list = list(filter(lambda tour: tour.uuid == tour_uuid, all_tours))
+    def is_student_by_uuid_exists(cls, student_uuid):
+        all_students = cls.get_all_students()
+        search_list = list(filter(lambda student: student.uuid == student_uuid, all_students))
         if len(search_list) < 1:
             return False
         else:
             return True
 
     @staticmethod
-    def get_all_tours():
+    def get_all_students():
         with open('database.pickle', 'rb+') as f:
             try:
                 data = pickle.load(f)
@@ -81,9 +81,9 @@ class TouristOrganisation:
 
 
 if __name__ == '__main__':
-    tour = {'pk': uuid4().hex, 'name': 'Минск', 'cost': 2000, 'timeline': '1 неделя',
-            'type_of_transport': 'Космо-шатл Илона Макса'}
-    #TouristOrganisation(**tour).save()
-    # result = TouristOrganisation.filter_lt(cost=4000)
-    print(TouristOrganisation.filter_lt(cost=4000))
-    print(TouristOrganisation.filter(pk='1a725e216d6c4cafa07c39ab06ced08e'))
+    student = {'pk': uuid4().hex, 'name': 'Минск', 'common_mark': 2000, 'sex': '1 неделя',
+            'form_of_education': 'Космо-шатл Илона Макса'}
+    #studentistOrganisation(**student).save()
+    # result = studentistOrganisation.filter_lt(common_mark=4000)
+    print(StudentSession.filter_lt(common_mark=4000))
+    print(StudentSession.filter(pk='1a725e216d6c4cafa07c39ab06ced08e'))
