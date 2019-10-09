@@ -9,11 +9,13 @@ class StudentSession:
     common_mark: float
     sex: str
     form_of_education: str
-    pk: str = uuid4().hex
+    pk: str
 
     def save(self):
         all_students = self.get_all_students()
         new_students = []
+        if not self.pk:
+            self.pk = uuid4().hex
         for student in all_students:
             if student.pk != self.pk:
                 new_students.append(student)

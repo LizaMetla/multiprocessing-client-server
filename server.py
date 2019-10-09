@@ -1,9 +1,11 @@
-import asyncio
 import json
+import multiprocessing
+import socket
 from dataclasses import asdict
 
-CONNECTION_COUNTER = 0
 from models import StudentSession
+
+CONNECTION_COUNTER = 0
 
 
 def get(pk=None):
@@ -15,7 +17,7 @@ def get(pk=None):
 
 
 def add(**kwargs):
-    return asdict(StudentSession(**kwargs).save()) # создание и сохранение данных класса
+    return asdict(StudentSession(**kwargs).save())  # создание и сохранение данных класса
 
 
 def delete(pk=None):
@@ -48,47 +50,50 @@ def filtera(**kwargs):
 
 
 operators = {'get': get, 'add': add, 'delete': delete, 'get_all_students': get_all_students, 'edit': edit,
-             'filter_lt': filter_lt, 'filter': filtera }
+             'filter_lt': filter_lt, 'filter': filtera}
 
 
-async def handle_echo(reader, writer):
+def handle_echo(connection, address):
     global CONNECTION_COUNTER
-    CONNECTION_COUNTER += 1
-    addr = writer.get_extra_info("peername")
-    print(f'Подключение от пользователя: {addr}')
-    print(f'Количество подключений: {CONNECTION_COUNTER}')
     while True:
-        data = await reader.read(10000)
+        data = connection.recv(1024)
         if not data:
             break
         message = data.decode()
-        print(f"Пользователь {addr!r} Сообщение: {message!r} ")
+        print(f"Пользователь {address!r} Сообщение: {message!r} ")
         request = json.loads(message)
         response = operators.get(request.get('method'))(**request.get('args'))
         data = json.dumps(response).encode()
 
         print(f"Отправка от сервера: {data!r}")
-        writer.write(data)
-        await writer.drain()
-    print(f"Закрытие соединения с пользователем: {addr}")
+        connection.sendall(data)
+
+    print(f"Закрытие соединения с пользователем: {address}")
     CONNECTION_COUNTER -= 1
     print(f'Количество подключений: {CONNECTION_COUNTER}')
-    writer.close()
+    connection.close()
 
 
-loop = asyncio.get_event_loop()
-coro = asyncio.start_server(handle_echo, '127.0.0.1', 8888, loop=loop)
-server = loop.run_until_complete(coro)
+if __name__ == '__main__':
 
-# Serve requests until Ctrl+C is pressed
-print('Запуск сервера на {}'.format(server.sockets[0].getsockname()))
-print(f'Количество подключений: {CONNECTION_COUNTER}')
-try:
-    loop.run_forever()
-except KeyboardInterrupt:
-    pass
+    socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    socket.bind(('127.0.0.1', 8888))
+    socket.listen(1)
+    print('Запуск сервера на 127.0.0.1:8888')
+    print(f'Количество подключений: {CONNECTION_COUNTER}')
+    try:
+        while True:
+            conn, address = socket.accept()
 
-# Close the server
-server.close()
-loop.run_until_complete(server.wait_closed())
-loop.close()
+            print(f'Подключение от пользователя: {address}')
+            CONNECTION_COUNTER += 1
+            print(f'Количество подключений: {CONNECTION_COUNTER}')
+            process = multiprocessing.Process(target=handle_echo, args=(conn, address))
+            process.daemon = True
+            process.start()
+    except:
+        pass
+    finally:
+        for process in multiprocessing.active_children():
+            process.terminate()
+            process.join()
